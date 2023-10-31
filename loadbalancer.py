@@ -1,8 +1,18 @@
 import socket
 import threading
+import json
 
 HOST = "127.0.0.1"
 PORT = 5432
+CONFIG_FILE = "config.json"
+
+
+def get_config(config_file):
+    config_obj = {}
+    with open(config_file) as f:
+        config_obj = json.load(f)
+    return config_obj
+
 
 # load server config from json file
 # make objects of server
@@ -20,7 +30,8 @@ PORT = 5432
 
 
 class BackendServer:
-    def __init__(self, host, port):
+    def __init__(self, id_, host, port):
+        self.id = id_
         self.host = host
         self.port = port
         self.alive = True
@@ -30,7 +41,7 @@ class BackendServer:
         self.backend_conn.connect((self.host, self.port))
 
     # client_conn -> lb <- backend_conn
-    def reverseProxy(self, client_conn):
+    def reverse_proxy(self, client_conn):
         def forward_request(source, destination):
             print(f"Sending data from {source.getsockname()} to {destination.getsockname()}")
             try:
@@ -51,11 +62,23 @@ class BackendServer:
         b2c_thread.join()
 
 
-def select_server():
-    return "127.0.0.1", 5001
+class RoundRobin:
+    def __init__(self, servers_):
+        self.idx = 0
+        self.servers = servers_
+
+    def next(self):
+        self.idx += 1
+        self.idx %= len(self.servers)
+        return self.servers[self.idx]
+
+
+def select_server(algo):
+    return algo.next()
 
 
 def main():
+    rr = RoundRobin(servers)
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     try:
         sock.bind((HOST, PORT))
@@ -68,10 +91,9 @@ def main():
                 # whenever we accept new client connection
                 # we will load balance it
                 # select_server will make sure server is healthy
-                server_host, server_port = select_server()
-                backend = BackendServer(server_host, server_port)
+                backend = select_server(rr)
                 backend.connect()
-                backend.reverseProxy(client_conn)
+                backend.reverse_proxy(client_conn)
 
     finally:
         sock.close()
@@ -83,4 +105,9 @@ def main():
 # make a connection to load balancer
 
 if __name__ == "__main__":
+    config = get_config(CONFIG_FILE)
+    servers_list = config["server"]
+    servers = []
+    for s in servers_list:
+        servers.append(BackendServer(int(s["id"]), s["host"], int(s["port"])))
     main()
