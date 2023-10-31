@@ -32,13 +32,12 @@ class BackendServer:
                 source.close()
                 destination.close()
 
-        if self.alive:
-            self.connect()
-            c2b_thread = threading.Thread(target=forward_request, args=(client_conn, self.backend_conn))
-            b2c_thread = threading.Thread(target=forward_request, args=(self.backend_conn, client_conn))
-            c2b_thread.start()
-            b2c_thread.start()
-            c2b_thread.join()
-            b2c_thread.join()
-        else:
+        if not self.alive:
             return
+        self.connect()
+        c2b_thread = threading.Thread(target=forward_request, args=(client_conn, self.backend_conn))
+        b2c_thread = threading.Thread(target=forward_request, args=(self.backend_conn, client_conn))
+        c2b_thread.start()
+        b2c_thread.start()
+        c2b_thread.join()
+        b2c_thread.join()
