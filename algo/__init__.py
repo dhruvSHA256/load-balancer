@@ -4,9 +4,14 @@ class RoundRobin:
         self.servers = servers_
 
     def next(self):
-        self.idx += 1
-        self.idx %= len(self.servers)
-        return self.servers[self.idx]
+        try:
+            filtered_servers = list(filter(lambda s: s.alive, self.servers))
+            self.idx += 1
+            self.idx %= len(filtered_servers)
+            choosen_server = filtered_servers[self.idx]
+            return choosen_server
+        except:
+            return None
 
 
 def select_server(algo):

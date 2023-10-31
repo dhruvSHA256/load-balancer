@@ -2,25 +2,13 @@ import socket
 from backend import BackendServer
 from algo import RoundRobin, select_server
 from config import get_config, HOST, PORT, CONFIG_FILE
-
-# load server config from json file
-# make objects of server
-# server:
-#   add : (host, port)
-#   alive: Bool true/false
-# servers: [server]
-
-# health check
-# in a seperate thread ping server and check if they are alive or not and set server.alive to true/false
-# lb algo need to only consider servers which are alive
-
-# get target server selected by LB algo
-# for a particular client request we need to make sure we are sending the all packets to the same server
+from health import check_health
 
 
 def main():
     rr = RoundRobin(servers)
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    threads = check_health(servers)
     try:
         sock.bind((HOST, PORT))
         sock.listen()
@@ -29,15 +17,12 @@ def main():
             client_conn, client_addr = sock.accept()
             with client_conn:
                 print(f"Connected by {client_addr}")
-                # whenever we accept new client connection
-                # we will load balance it
-                # select_server will make sure server is healthy
                 backend = select_server(rr)
-                backend.connect()
-                backend.reverse_proxy(client_conn)
-
+                if backend:
+                    backend.reverse_proxy(client_conn)
     finally:
         sock.close()
+        map(lambda t: t.join(), threads)
 
 
 # to test

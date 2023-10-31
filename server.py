@@ -8,6 +8,16 @@ else:
     PORT = int(sys.argv[1])
 
 
+def get_response(data):
+    if data[0] == "GET /health HTTP/1.1":
+        # for testing make one srver dead
+        if PORT == 5002:
+            return "up"
+            # return "down"
+        else:
+            return "up"
+
+
 def main():
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     try:
@@ -18,10 +28,12 @@ def main():
             client_conn, client_addr = sock.accept()
             with client_conn:
                 print(f"Connected by {client_addr}")
-                data = client_conn.recv(1024)
+                data = client_conn.recv(1024).decode()
                 if not data:
                     break
-                response = f"Hello from {HOST}:{PORT}"
+                header = data.split("\r")[0:-2]
+                clean_data = list(map(lambda x: x.lstrip("\n"), header))
+                response = get_response(clean_data) or f"hello from {HOST}:{PORT}"
                 http_response = f"HTTP/1.1 200 OK\r\nContent-Length: {len(response)}\r\n\r\n{response}"
                 client_conn.send(http_response.encode())
     finally:

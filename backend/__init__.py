@@ -8,10 +8,15 @@ class BackendServer:
         self.host = host
         self.port = port
         self.alive = True
+        self.lock = threading.Lock()
 
     def connect(self):
         self.backend_conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.backend_conn.connect((self.host, self.port))
+
+    def update_health_status(self, alive):
+        with self.lock:
+            self.alive = alive
 
     # client_conn -> lb <- backend_conn
     def reverse_proxy(self, client_conn):
@@ -27,9 +32,13 @@ class BackendServer:
                 source.close()
                 destination.close()
 
-        c2b_thread = threading.Thread(target=forward_request, args=(client_conn, self.backend_conn))
-        b2c_thread = threading.Thread(target=forward_request, args=(self.backend_conn, client_conn))
-        c2b_thread.start()
-        b2c_thread.start()
-        c2b_thread.join()
-        b2c_thread.join()
+        if self.alive:
+            self.connect()
+            c2b_thread = threading.Thread(target=forward_request, args=(client_conn, self.backend_conn))
+            b2c_thread = threading.Thread(target=forward_request, args=(self.backend_conn, client_conn))
+            c2b_thread.start()
+            b2c_thread.start()
+            c2b_thread.join()
+            b2c_thread.join()
+        else:
+            return
