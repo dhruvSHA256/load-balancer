@@ -1,8 +1,15 @@
 import socket
 from backend import BackendServer
 from algo import RoundRobin, select_server
-from config import get_config, HOST, PORT, CONFIG_FILE
+from config import get_config, CONFIG_FILE
 from health import check_health
+import sys
+
+HOST = "127.0.0.1"
+if len(sys.argv) <= 1:
+    PORT = 5432
+else:
+    PORT = int(sys.argv[1])
 
 
 def main():
@@ -24,11 +31,6 @@ def main():
         sock.close()
         map(lambda t: t.join(), threads)
 
-
-# to test
-# run backend servers
-# run load balancer
-# make a connection to load balancer
 
 if __name__ == "__main__":
     config = get_config(CONFIG_FILE)

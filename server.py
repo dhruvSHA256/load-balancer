@@ -10,17 +10,11 @@ else:
 
 def get_response(data):
     if data[0] == "GET /health HTTP/1.1":
-        # for testing make one srver dead
-        if PORT == 5002:
-            return "up"
-            # return "down"
-        else:
-            return "up"
+        return "up"
 
 
 def main():
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    try:
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
         sock.bind((HOST, PORT))
         sock.listen()
         print(f"Listening on port: {PORT}")
@@ -36,8 +30,6 @@ def main():
                 response = get_response(clean_data) or f"hello from {HOST}:{PORT}"
                 http_response = f"HTTP/1.1 200 OK\r\nContent-Length: {len(response)}\r\n\r\n{response}"
                 client_conn.send(http_response.encode())
-    finally:
-        sock.close()
 
 
 if __name__ == "__main__":
