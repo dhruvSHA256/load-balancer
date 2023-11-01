@@ -1,15 +1,18 @@
 import socket
-from backend import BackendServer
-from algo import RoundRobin, select_server
-from config import get_config, CONFIG_FILE
-from health import check_health
-import sys
+from backend.BackendServer import BackendServer
+from algo import select_server
+from algo.roundrobin import RoundRobin
+from config.config import load_config, CONFIG_FILE
+from health.health import check_health
 
-HOST = "127.0.0.1"
-if len(sys.argv) <= 1:
-    PORT = 5432
-else:
-    PORT = int(sys.argv[1])
+# housekeeping
+config = load_config(CONFIG_FILE)
+servers_list = config["server"]
+HOST = config.get("host", "127.0.0.1")
+PORT = config.get("port", 5432)
+servers = []
+for s in servers_list:
+    servers.append(BackendServer(int(s["id"]), s["host"], int(s["port"])))
 
 
 def main():
@@ -33,9 +36,4 @@ def main():
 
 
 if __name__ == "__main__":
-    config = get_config(CONFIG_FILE)
-    servers_list = config["server"]
-    servers = []
-    for s in servers_list:
-        servers.append(BackendServer(int(s["id"]), s["host"], int(s["port"])))
     main()
