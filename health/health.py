@@ -1,9 +1,10 @@
 from time import sleep
-import threading
+from threading import Thread
+from typing import List
 import requests
 
 
-def get_server_heart_beat(server):
+def get_server_heart_beat(server) -> bool:
     try:
         resp = requests.get(f"http://{server.host}:{server.port}/health")
         return resp.text == "up"
@@ -11,17 +12,17 @@ def get_server_heart_beat(server):
         return False
 
 
-def update_heartbeat(server, delay):
+def update_heartbeat(server, delay) -> None:
     while True:
         server_heart_beat = get_server_heart_beat(server)
         server.update_health_status(server_heart_beat)
         sleep(delay)
 
 
-def check_health(servers):
+def check_health(servers) -> List[Thread]:
     threads = []
     for s in servers:
-        t = threading.Thread(target=update_heartbeat, args=(s, 2))
+        t = Thread(target=update_heartbeat, args=(s, 2))
         threads.append(t)
         t.start()
     return threads
