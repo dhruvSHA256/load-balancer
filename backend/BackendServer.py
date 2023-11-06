@@ -9,6 +9,7 @@ class BackendServer:
         self.port = port
         self.isAlive = True
         self.lock = threading.Lock()
+        self.num_connections = 0
 
     def connect(self):
         self.backend_conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -20,8 +21,11 @@ class BackendServer:
 
     # client_conn -> lb <- backend_conn
     def reverse_proxy(self, client_conn):
+        print(self.num_connections)
         def forward_request(source, destination):
             print(f"Sending data from {source.getsockname()} to {destination.getsockname()}")
+            print(self.num_connections)
+            self.num_connections += 1
             try:
                 while True:
                     data = source.recv(1024)
@@ -31,6 +35,8 @@ class BackendServer:
             finally:
                 source.close()
                 destination.close()
+                self.num_connections -= 1
+                print(self.num_connections)
 
         if not self.isAlive:
             return

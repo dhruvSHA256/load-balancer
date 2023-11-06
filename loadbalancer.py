@@ -4,6 +4,7 @@ from typing import Dict, List, Tuple
 from backend.BackendServer import BackendServer
 from algo import Algo, select_server
 from algo.roundrobin import RoundRobin
+from algo.leastconnection import LeastConnection
 from config.config import load_config, CONFIG_FILE
 from health.health import check_health
 
@@ -18,7 +19,8 @@ for server in servers_list:
 
 
 def main():
-    rr: Algo = RoundRobin(servers)
+    rr: Algo = RoundRobin()
+    lc: Algo = LeastConnection()
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     threads: List[Thread] = check_health(servers)
     try:
@@ -30,9 +32,11 @@ def main():
             client_conn, client_addr = sock_conn
             with client_conn:
                 print(f"Connected by {client_addr}")
-                backend: BackendServer = select_server(rr)
+                # backend: BackendServer = select_server(lc, servers)
+                backend: BackendServer = select_server(rr, servers)
                 if backend:
                     backend.reverse_proxy(client_conn)
+                    print(backend.num_connections)
     finally:
         sock.close()
         map(lambda t: t.join(), threads)

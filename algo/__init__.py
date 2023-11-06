@@ -5,16 +5,10 @@ from backend.BackendServer import BackendServer
 
 class Algo(metaclass=abc.ABCMeta):
     @abc.abstractmethod
-    def next(self) -> BackendServer:
+    def next(self, servers: List[BackendServer]) -> BackendServer:
         """Load in the data set"""
         raise NotImplementedError
 
-    @property
-    @abc.abstractmethod
-    def servers(self) -> List[BackendServer]:
-        """Abstract property for 'servers' attribute"""
-        pass
 
-
-def select_server(algo: Algo) -> BackendServer:
-    return algo.next()
+def select_server(algo: Algo, servers: List[BackendServer]) -> BackendServer:
+    return algo.next(servers)
