@@ -7,7 +7,7 @@ class BackendServer:
         self.id = id_
         self.host = host
         self.port = port
-        self.isAlive = True
+        self.is_alive = True
         self.lock = threading.Lock()
         self.num_connections = 0
 
@@ -15,17 +15,16 @@ class BackendServer:
         self.backend_conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.backend_conn.connect((self.host, self.port))
 
-    def update_health_status(self, isAlive):
+    def update_health_status(self, is_alive):
         with self.lock:
-            self.isAlive = isAlive
+            self.is_alive = is_alive
 
     # client_conn -> lb <- backend_conn
     def reverse_proxy(self, client_conn):
-        print(self.num_connections)
         def forward_request(source, destination):
             print(f"Sending data from {source.getsockname()} to {destination.getsockname()}")
-            print(self.num_connections)
-            self.num_connections += 1
+            with self.lock:
+                self.num_connections += 1
             try:
                 while True:
                     data = source.recv(1024)
@@ -33,12 +32,10 @@ class BackendServer:
                         break
                     destination.send(data)
             finally:
-                source.close()
-                destination.close()
-                self.num_connections -= 1
-                print(self.num_connections)
+                with self.lock:
+                    self.num_connections -= 1
 
-        if not self.isAlive:
+        if not self.is_alive:
             return
         self.connect()
         c2b_thread = threading.Thread(target=forward_request, args=(client_conn, self.backend_conn))
@@ -47,3 +44,5 @@ class BackendServer:
         b2c_thread.start()
         c2b_thread.join()
         b2c_thread.join()
+        client_conn.close()
+        self.backend_conn.close()

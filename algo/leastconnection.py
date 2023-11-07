@@ -8,10 +8,10 @@ class LeastConnection(Algo):
     def __init__(self):
         self.idx = 0
 
-    def next(self, servers: List[BackendServer]):
+    def next(self, servers: List[BackendServer]) -> BackendServer | None:
         try:
-            choosen_server = None 
-            choosen_server = reduce( lambda x,y : x if x.num_connections < y.num_connections else y, servers)
+            choosen_server = None
+            choosen_server = reduce(lambda x, y: x if x.num_connections < y.num_connections else y, servers)
             return choosen_server
         except:
             return None

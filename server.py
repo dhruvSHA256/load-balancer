@@ -1,5 +1,6 @@
 import socket
 import sys
+from time import sleep
 
 HOST = "127.0.0.1"
 if len(sys.argv) <= 1:
@@ -31,6 +32,7 @@ def main():
                     clean_data = list(map(lambda x: x.lstrip("\n"), header))
                     response = get_response(clean_data) or f"hello from {HOST}:{PORT}"
                     http_response = f"HTTP/1.1 200 OK\r\nContent-Length: {len(response)}\r\n\r\n{response}"
+                    sleep(10)
                     client_conn.send(http_response.encode())
         except KeyboardInterrupt:
             print("Ctrl-C pressed")

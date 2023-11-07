@@ -1,6 +1,9 @@
 {
     "host": "127.0.0.1",
     "port": 5432,
+    "health_check_delay": 2,
+    "health_endpoint": "health",
+    "algo": "LeastConnection",
     "server": [
         {
             "id": 1,
